@@ -9,7 +9,21 @@ PORT = 1883
 mess = ""
 
 THINGS_BOARD_ACCESS_TOKEN = "S4BdTohvgBfxa3D2D7bz"
-bbc_port = "COM5"
+
+
+def getPort():
+    ports = serial.tools.list_ports.comports()
+    N = len(ports)
+    commPort = "None"
+    for i in range(0, N):
+        port = ports[i]
+        strPort = str(port)
+        if "USB Serial Device" in strPort:
+            splitPort = strPort.split(" ")
+            commPort = (splitPort[0])
+    return commPort
+
+bbc_port = getPort()
 if len(bbc_port) > 0:
     ser = serial.Serial(port=bbc_port, baudrate=115200)
 
@@ -43,6 +57,10 @@ def readSerial():
                 mess = mess[end+1:]
 
 
+
+
+
+
 def subscribed(client, userdata, mid, granted_qos):
     print("Subscribed...")
 
@@ -53,14 +71,13 @@ def recv_message(client, userdata, message):
     try:
         jsonobj = json.loads(message.payload)
         if jsonobj['method'] == "setLED":
-            print(type(jsonobj['params']))
-            temp_data['value'] = jsonobj['params']
-            client.publish('v1/devices/me/Button_Led', json.dumps(temp_data), 1)
-            cmd = 1 if temp_data['value'] == True else 0
+            temp_data['valueLed'] = jsonobj['params']
+            client.publish('v1/devices/me/attributes', json.dumps(temp_data), 1)
+            cmd = 1 if temp_data['valueLed'] == True else 0
         if jsonobj['method'] == "setFAN":
-            temp_data['value'] = jsonobj['params']
-            client.publish('v1/devices/me/Button_fan', json.dumps(temp_data), 1)
-            cmd = 3 if temp_data['value'] == True else 2
+            temp_data['valueFan'] = jsonobj['params']
+            client.publish('v1/devices/me/attributes', json.dumps(temp_data), 1)
+            cmd = 3 if temp_data['valueFan'] == True else 2
     except:
         pass
 
@@ -90,4 +107,4 @@ while True:
     if len(bbc_port) >  0:
         readSerial()
 
-    time.sleep(1)
+    time.sleep(5)
